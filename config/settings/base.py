@@ -70,12 +70,14 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "rest_framework",
+
 ]
 
 LOCAL_APPS = [
     "misaghestan.users.apps.UsersConfig",
     "misaghestan.core.apps.CoreConfig",
     "misaghestan.course.apps.CourseConfig",
+    "misaghestan.subscriptions.apps.FlexibleSubscriptionsConfig",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -240,7 +242,7 @@ LOGGING = {
     "formatters": {
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s "
-            "%(process)d %(thread)d %(message)s"
+                      "%(process)d %(thread)d %(message)s"
         }
     },
     "handlers": {
@@ -252,7 +254,6 @@ LOGGING = {
     },
     "root": {"level": "INFO", "handlers": ["console"]},
 }
-
 
 # django-allauth
 # ------------------------------------------------------------------------------
@@ -284,3 +285,5 @@ DOWNLOAD_HOST_DOMAIN = env(
     "DOWNLOAD_HOST_DOMAIN",
     default="localhost",
 )
+
+DFS_CURRENCY_LOCALE = "fa_ir"

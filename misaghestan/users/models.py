@@ -12,3 +12,13 @@ class User(AbstractUser):
 
     def get_absolute_url(self):
         return reverse("users:detail", kwargs={"username": self.username})
+
+    # def __user_get_usersubscription(self):
+    #     if not hasattr(self, '_usersubscription_cache'):
+    #         user._usersubscription_cache = None
+    #         for us in UserSubscription.active_objects.filter(user=user):
+    #             if us.valid():
+    #                 user._usersubscription_cache = us
+    #                 break
+    #
+    #     return user._usersubscription_cache
