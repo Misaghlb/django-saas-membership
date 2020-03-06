@@ -1,13 +1,11 @@
 Misaghestan
 ===========
-
-^^^
-my funny learnig and training Project.
+:License: MIT
 
 it's a Subscription Django Project, Users can Subscribe to different Plans and use the Services.
 
-:License: MIT
+payments are using Zarinpal Gateway.
 
 Run Using Docker:
 
-docker-compose -f local.yml up
+    $  docker-compose -f local.yml up
