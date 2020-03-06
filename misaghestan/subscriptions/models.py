@@ -2,15 +2,17 @@
 from datetime import timedelta
 from uuid import uuid4
 
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from django.utils import timezone
 
 # Convenience references for units for plan recurrence billing
 # ----------------------------------------------------------------------------
+
 ONCE = '0'
 SECOND = '1'
 MINUTE = '2'
@@ -29,6 +31,8 @@ RECURRENCE_UNIT_CHOICES = (
     (MONTH, 'month'),
     (YEAR, 'year'),
 )
+
+
 # ----------------------------------------------------------------------------
 
 class PlanTag(models.Model):
@@ -44,6 +48,7 @@ class PlanTag(models.Model):
 
     def __str__(self):
         return self.tag
+
 
 class SubscriptionPlan(models.Model):
     """Details for a subscription plan."""
@@ -110,6 +115,7 @@ class SubscriptionPlan(models.Model):
 
         return ', '.join(tag.tag for tag in self.tags.all()[:3])
 
+
 class PlanCost(models.Model):
     """Cost and frequency of billing for a plan."""
     id = models.UUIDField(
@@ -151,6 +157,9 @@ class PlanCost(models.Model):
 
     class Meta:
         ordering = ('recurrence_unit', 'recurrence_period', 'cost',)
+
+    def __str__(self):
+        return f'{self.display_billing_frequency_text}  {self.plan}'
 
     @property
     def display_recurrent_unit_text(self):
@@ -235,6 +244,7 @@ class PlanCost(models.Model):
 
         return None
 
+
 class UserSubscription(models.Model):
     """Details of a user's specific subscription."""
     id = models.UUIDField(
@@ -244,7 +254,7 @@ class UserSubscription(models.Model):
         verbose_name='ID',
     )
     user = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         help_text=_('the user this subscription applies to'),
         null=True,
         on_delete=models.CASCADE,
@@ -293,6 +303,13 @@ class UserSubscription(models.Model):
     class Meta:
         ordering = ('user', 'date_billing_start',)
 
+    def user_is_group_member(self):
+        "Returns True is user is member of subscription's group"
+        return self.subscription.plan.group in self.user.groups.all()
+
+    user_is_group_member.boolean = True
+
+
 class SubscriptionTransaction(models.Model):
     """Details for a subscription plan billing."""
     id = models.UUIDField(
@@ -302,7 +319,7 @@ class SubscriptionTransaction(models.Model):
         verbose_name='ID',
     )
     user = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         help_text=_('the user that this subscription was billed for'),
         null=True,
         on_delete=models.SET_NULL,
@@ -317,7 +334,7 @@ class SubscriptionTransaction(models.Model):
     )
     date_transaction = models.DateTimeField(
         help_text=_('the datetime the transaction was billed'),
-        verbose_name='transaction date',
+        verbose_name='transaction date', null=True, blank=True,
     )
     amount = models.DecimalField(
         blank=True,
@@ -326,9 +343,46 @@ class SubscriptionTransaction(models.Model):
         max_digits=19,
         null=True,
     )
+    reservation = models.CharField(max_length=255, blank=True, null=True)
+    reference = models.CharField(max_length=255, blank=True, null=True)
+    paid = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('date_transaction', 'user',)
+
+    @classmethod
+    def new_transaction(cls, subscription, transaction_date=None):
+        """Records transaction details in SubscriptionTransaction.
+
+            Parameters:
+                subscription (obj): A UserSubscription object.
+                transaction_date (obj): A DateTime object of when
+                    payment occurred (defaults to current datetime if
+                    none provided).
+
+            Returns:
+                obj: The created SubscriptionTransaction instance.
+        """
+        try:
+            from misaghestan.payments.payment import Zarinpal
+
+            authority, _ = Zarinpal.zarinpal_payment_request(subscription.user, subscription.subscription.cost,
+                                                             'خرید از میثاقستان',
+                                                             'misaghlb@live.com', '')
+
+            return cls.objects.create(
+                user=subscription.user,
+                subscription=subscription.subscription,
+                date_transaction=transaction_date,
+                amount=subscription.subscription.cost,
+                reservation=authority,
+            )
+        except Exception as e:
+            print(e)
+            return False
+            # messages.add_message(request, messages.WARNING, str(e))
+            # return redirect('core:show_checkout_index', order_id=order.id)
+
 
 class PlanList(models.Model):
     """Model to record details of a display list of SubscriptionPlans."""
@@ -366,6 +420,7 @@ class PlanList(models.Model):
 
     def __str__(self):
         return self.title
+
 
 class PlanListDetail(models.Model):
     """Model to add additional details to plans when part of PlanList."""

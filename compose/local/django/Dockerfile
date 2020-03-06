@@ -18,8 +18,11 @@ RUN apt-get update \
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements /requirements
 RUN pip install -r /requirements/local.txt
-#RUN pip install git+https://github.com/Misaghlb/django-flexible-subscriptions.git
 
+#
+RUN pip install zeep
+#RUN pip install git+https://github.com/Misaghlb/django-flexible-subscriptions.git
+#
 
 COPY ./compose/production/django/entrypoint /entrypoint
 RUN sed -i 's/\r$//g' /entrypoint

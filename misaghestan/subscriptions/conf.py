@@ -305,23 +305,6 @@ CURRENCY = {
         p_sign_posn=SIGN_PRECEDE_VALUE,
         n_sign_posn=SIGN_PARANTHESES,
     ),
-    'fa_ir': Currency(
-        currency_symbol='﷼',
-        int_curr_symbol='IRR',
-        p_cs_precedes=False,
-        n_cs_precedes=False,
-        p_sep_by_space=True,
-        n_sep_by_space=True,
-        mon_decimal_point='.',
-        mon_thousands_sep=',',
-        mon_grouping=3,
-        frac_digits=0,
-        int_frac_digits=0,
-        positive_sign='',
-        negative_sign='-',
-        p_sign_posn=SIGN_PRECEDE_VALUE_SYMBOL,
-        n_sign_posn=SIGN_PRECEDE_VALUE_SYMBOL
-    ),
     'fr_ca': Currency(
         currency_symbol='$',
         int_curr_symbol='CAD',
@@ -340,7 +323,7 @@ CURRENCY = {
         n_sign_posn=SIGN_PARANTHESES,
     ),
     'fa_ir': Currency(
-        currency_symbol='﷼',
+        currency_symbol='تومان',
         int_curr_symbol='IRR',
         p_cs_precedes=False,
         n_cs_precedes=False,

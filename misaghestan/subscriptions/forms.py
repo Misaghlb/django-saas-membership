@@ -5,8 +5,8 @@ from django.core import validators
 from django.forms import ModelForm
 from django.utils import timezone
 
-from subscriptions.conf import CURRENCY, SETTINGS
-from subscriptions.models import SubscriptionPlan, PlanCost
+from .conf import CURRENCY, SETTINGS
+from .models import SubscriptionPlan, PlanCost
 
 
 def assemble_cc_years():

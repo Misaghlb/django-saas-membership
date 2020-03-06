@@ -1,7 +1,7 @@
 """Abstract templates for the Djanog Flexible Subscriptions app."""
 from django.views import generic
 
-from subscriptions.conf import SETTINGS
+from .conf import SETTINGS
 
 BASE_TEMPLATE = SETTINGS['base_template']
 

@@ -11,12 +11,12 @@ from django.forms import HiddenInput
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect
 from django.http.response import HttpResponseNotAllowed, HttpResponseNotFound
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 
-from subscriptions import models, forms, abstract
+from . import models, forms, abstract
 
 
 # Dashboard View
@@ -736,7 +736,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
             payment_form = self.payment_form(initial=request.POST)
 
         context['plan_cost_form'] = plan_cost_form
-        context['payment_form'] = payment_form
+        # context['payment_form'] = payment_form
 
         return self.render_to_response(context)
 
@@ -750,16 +750,16 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
         plan_cost_form = forms.SubscriptionPlanCostForm(
             request.POST, subscription_plan=self.subscription_plan
         )
-        payment_form = self.payment_form(request.POST)
+        # payment_form = self.payment_form(request.POST)
 
         # Validate form submission
-        if all([payment_form.is_valid(), plan_cost_form.is_valid()]):
+        if all([plan_cost_form.is_valid()]):
             self.confirmation = True
             context = self.get_context_data(**kwargs)
 
             # Forms to process payment (hidden to prevent editing)
             context['plan_cost_form'] = self.hide_form(plan_cost_form)
-            context['payment_form'] = self.hide_form(payment_form)
+            # context['payment_form'] = self.hide_form(payment_form)
 
             # Add the PlanCost instance to context for use in template
             context['plan_cost'] = plan_cost_form.cleaned_data['plan_cost']
@@ -780,12 +780,12 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
         plan_cost_form = forms.SubscriptionPlanCostForm(
             request.POST, subscription_plan=self.subscription_plan
         )
-        payment_form = self.payment_form(request.POST)
+        # payment_form = self.payment_form(request.POST)
 
-        if all([payment_form.is_valid(), plan_cost_form.is_valid()]):
+        if all([plan_cost_form.is_valid()]):
             # Attempt to process payment
             payment_transaction = self.process_payment(
-                payment_form=payment_form,
+                # payment_form=payment_form,
                 plan_cost_form=plan_cost_form,
             )
 
@@ -796,14 +796,17 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
                 )
 
                 # Record the transaction details
+                print('asdasdads')
                 transaction = self.record_transaction(
                     subscription,
-                    self.retrieve_transaction_date(payment_transaction)
+                    # self.retrieve_transaction_date(payment_transaction)
                 )
+                if transaction:
+                    return redirect('https://www.zarinpal.com/pg/StartPay/' + str(transaction.reference))
 
-                return HttpResponseRedirect(
-                    self.get_success_url(transaction_id=transaction.id)
-                )
+                # return HttpResponseRedirect(
+                #     self.get_success_url(transaction_id=transaction.id)
+                # )
 
             # Payment unsuccessful, add message for confirmation page
             messages.error(request, 'Error processing payment')
@@ -837,7 +840,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
         """
         return True
 
-    def setup_subscription(self, request_user, plan_cost):
+    def setup_subscription(self, request_user, plan_cost, active=False):
         """Adds subscription to user and adds them to required group.
 
             Parameters:
@@ -846,6 +849,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
 
             Returns:
                 obj: The newly created UserSubscription instance.
+                boolean: is active or will active later(eg: after transaction).
         """
         current_date = timezone.now()
 
@@ -857,7 +861,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
             date_billing_end=None,
             date_billing_last=current_date,
             date_billing_next=plan_cost.next_billing_datetime(current_date),
-            active=True,
+            active=active,
             cancelled=False,
         )
 
@@ -895,15 +899,16 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
             Returns:
                 obj: The created SubscriptionTransaction instance.
         """
-        if transaction_date is None:
-            transaction_date = timezone.now()
+        # if transaction_date is None:
+        #     transaction_date = timezone.now()
 
-        return models.SubscriptionTransaction.objects.create(
-            user=subscription.user,
-            subscription=subscription.subscription,
-            date_transaction=transaction_date,
-            amount=subscription.subscription.cost,
-        )
+        return models.SubscriptionTransaction.new_transaction(subscription)
+        # return models.SubscriptionTransaction.objects.create(
+        #     user=subscription.user,
+        #     subscription=subscription.subscription,
+        #     date_transaction=transaction_date,
+        #     amount=subscription.subscription.cost,
+        # )
 
 class SubscribeUserList(LoginRequiredMixin, abstract.ListView):
     """List of all a user's subscriptions."""

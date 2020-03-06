@@ -77,7 +77,8 @@ LOCAL_APPS = [
     "misaghestan.users.apps.UsersConfig",
     "misaghestan.core.apps.CoreConfig",
     "misaghestan.course.apps.CourseConfig",
-    "misaghestan.subscriptions.apps.FlexibleSubscriptionsConfig",
+    "misaghestan.subscriptions.apps.SaassubscriptionConfig",
+    # "misaghestan.payments.apps.PaymentsConfig",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -287,3 +288,7 @@ DOWNLOAD_HOST_DOMAIN = env(
 )
 
 DFS_CURRENCY_LOCALE = "fa_ir"
+DFS_SUBSCRIBE_VIEW = "misaghestan.subscriptions.views.SubscribeView"
+
+ZARINPAL_MERCHANT_ID = env("ZARINPAL_MERCHANT_ID")
+ZARINPAL_CALLBACK_URL = 'payments:show_checkout_index'

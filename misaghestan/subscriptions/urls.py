@@ -4,8 +4,8 @@ import importlib
 
 from django.conf.urls import url
 
-from subscriptions import views
-from subscriptions.conf import SETTINGS
+from . import views
+from .conf import SETTINGS
 
 # Retrieve the proper subscribe view
 SubscribeView = getattr( # pylint: disable=invalid-name

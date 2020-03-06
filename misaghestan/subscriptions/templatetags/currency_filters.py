@@ -1,7 +1,7 @@
 """Template filters for Django Flexible Subscriptions."""
 from django import template
 
-from subscriptions.conf import CURRENCY, SETTINGS
+from ..conf import CURRENCY, SETTINGS
 
 
 register = template.Library()
