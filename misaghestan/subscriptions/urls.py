@@ -35,6 +35,11 @@ urlpatterns = [
         name='dfs_subscribe_cancel',
     ),
     url(
+        r'^subscribe/renew/(?P<subscription_id>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})/$',
+        views.SubscribeRenewView.as_view(),
+        name='dfs_subscribe_renew',
+    ),
+    url(
         r'^subscriptions/$',
         views.SubscribeUserList.as_view(),
         name='dfs_subscribe_user_list',

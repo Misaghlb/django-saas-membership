@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.utils import timezone
 from zeep import Client
 
-from misaghestan.subscriptions.models import SubscriptionTransaction
+from misaghestan.subscriptions.models import SubscriptionTransaction, UserSubscription
 
 
 class Zarinpal:
@@ -20,31 +20,28 @@ class Zarinpal:
         return zarinpal_client
 
     @classmethod
-    def checkout(cls, data) -> (any, str):
+    def checkout(cls, request) -> (any, str):
         """
         verify payment
         """
 
-        authority = data.get('Authority')
-        status = data.get('Status')
+        authority = request.GET.get('Authority')
+        status = request.GET.get('Status')
         transaction: SubscriptionTransaction = SubscriptionTransaction.objects.get(reservation=authority, paid=False)
 
         try:
             reference, verify_status = cls.zarinpal_verify(transaction.amount, authority)
-            print(transaction)
-            transaction.reference = reference
-            transaction.paid = True
-            transaction.date_transaction = timezone.now()
-            transaction.save()
+            transaction.handle_successful_transaction(reference)
+            
             return transaction , ''
         except Exception as e:
             return transaction, str(e)
 
     @classmethod
     def zarinpal_verify(cls, amount, authority) -> tuple:
-        result = cls.get_zarinpal_client().service.PaymentVerification(settings.ZARINPAL_MERCHANT_ID,
-                                                                       authority, amount)
-        # return 'asdasd', 100
+        # result = cls.get_zarinpal_client().service.PaymentVerification(settings.ZARINPAL_MERCHANT_ID,
+        #                                                                authority, amount)
+        return 'asdasd', 100
 
         if result.Status == 100:
             return result.RefID, result.Status
@@ -60,6 +57,8 @@ class Zarinpal:
         callback_url = reverse(settings.ZARINPAL_CALLBACK_URL)
         result = cls.get_zarinpal_client().service.PaymentRequest(settings.ZARINPAL_MERCHANT_ID, amount, description,
                                                                   email, mobile, callback_url)
+        return str('23r42g34t34t43t43'), 100
+
         if result.Status == 100:
         # return str('23r42g34t34t43t43'), 100
             return str(result.Authority), result.Status

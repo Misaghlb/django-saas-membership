@@ -2,7 +2,7 @@
 from django.db.models import Q
 from django.utils import timezone
 
-from subscriptions import models
+from misaghestan.subscriptions import models
 
 
 class Manager():

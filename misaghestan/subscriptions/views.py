@@ -16,6 +16,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 
+from misaghestan.subscriptions.models import UserSubscription
 from . import models, forms, abstract
 
 
@@ -27,6 +28,7 @@ class DashboardView(PermissionRequiredMixin, abstract.TemplateView):
     raise_exception = True
     template_name = 'subscriptions/dashboard.html'
 
+
 # Tag Views
 # -----------------------------------------------------------------------------
 class TagListView(PermissionRequiredMixin, abstract.ListView):
@@ -37,8 +39,9 @@ class TagListView(PermissionRequiredMixin, abstract.ListView):
     context_object_name = 'tags'
     template_name = 'subscriptions/tag_list.html'
 
+
 class TagCreateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
 ):
     """View to create a new tag."""
     model = models.PlanTag
@@ -50,8 +53,9 @@ class TagCreateView(
     success_url = reverse_lazy('dfs_tag_list')
     template_name = 'subscriptions/tag_create.html'
 
+
 class TagUpdateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
 ):
     """View to update the details of a tag."""
     model = models.PlanTag
@@ -63,6 +67,7 @@ class TagUpdateView(
     success_url = reverse_lazy('dfs_tag_list')
     pk_url_kwarg = 'tag_id'
     template_name = 'subscriptions/tag_update.html'
+
 
 class TagDeleteView(PermissionRequiredMixin, abstract.DeleteView):
     """View to delete a tag.
@@ -98,6 +103,7 @@ class PlanListView(PermissionRequiredMixin, abstract.ListView):
     context_object_name = 'plans'
     template_name = 'subscriptions/plan_list.html'
 
+
 class PlanCreateView(PermissionRequiredMixin, abstract.CreateView):
     """View to create a new subscription plan.
 
@@ -120,7 +126,7 @@ class PlanCreateView(PermissionRequiredMixin, abstract.CreateView):
     def get(self, request, *args, **kwargs):
         """Overriding get method to handle inline formset."""
         # Setup the formset for PlanCost
-        PlanCostFormSet = inlineformset_factory( # pylint: disable=invalid-name
+        PlanCostFormSet = inlineformset_factory(  # pylint: disable=invalid-name
             parent_model=models.SubscriptionPlan,
             model=models.PlanCost,
             form=forms.PlanCostForm,
@@ -142,7 +148,7 @@ class PlanCreateView(PermissionRequiredMixin, abstract.CreateView):
     def post(self, request, *args, **kwargs):
         """Overriding post method to handle inline formsets."""
         # Setup the formset for PlanCost
-        PlanCostFormSet = inlineformset_factory( # pylint: disable=invalid-name
+        PlanCostFormSet = inlineformset_factory(  # pylint: disable=invalid-name
             parent_model=models.SubscriptionPlan,
             model=models.PlanCost,
             form=forms.PlanCostForm,
@@ -197,6 +203,7 @@ class PlanCreateView(PermissionRequiredMixin, abstract.CreateView):
             )
         )
 
+
 class PlanUpdateView(PermissionRequiredMixin, abstract.UpdateView):
     """View to update a subscription plan.
 
@@ -221,7 +228,7 @@ class PlanUpdateView(PermissionRequiredMixin, abstract.UpdateView):
     def get(self, request, *args, **kwargs):
         """Overriding get method to handle inline formset."""
         # Setup the formset for PlanCost
-        PlanCostFormSet = inlineformset_factory( # pylint: disable=invalid-name
+        PlanCostFormSet = inlineformset_factory(  # pylint: disable=invalid-name
             parent_model=models.SubscriptionPlan,
             model=models.PlanCost,
             form=forms.PlanCostForm,
@@ -243,7 +250,7 @@ class PlanUpdateView(PermissionRequiredMixin, abstract.UpdateView):
     def post(self, request, *args, **kwargs):
         """Overriding post method to handle inline formsets."""
         # Setup the formset for PlanCost
-        PlanCostFormSet = inlineformset_factory( # pylint: disable=invalid-name
+        PlanCostFormSet = inlineformset_factory(  # pylint: disable=invalid-name
             parent_model=models.SubscriptionPlan,
             model=models.PlanCost,
             form=forms.PlanCostForm,
@@ -298,6 +305,7 @@ class PlanUpdateView(PermissionRequiredMixin, abstract.UpdateView):
             )
         )
 
+
 class PlanDeleteView(PermissionRequiredMixin, abstract.DeleteView):
     """View to delete a subscription plan.
 
@@ -330,12 +338,13 @@ class SubscriptionListView(PermissionRequiredMixin, abstract.ListView):
     permission_required = 'subscriptions.subscriptions'
     raise_exception = True
     context_object_name = 'users'
-    queryset = model.objects.all().exclude(subscriptions=None).order_by('username') # pylint: disable=line-too-long
+    queryset = model.objects.all().exclude(subscriptions=None).order_by('username')  # pylint: disable=line-too-long
     paginate_by = 100
     template_name = 'subscriptions/subscription_list.html'
 
+
 class SubscriptionCreateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
 ):
     """View to create a new user subscription."""
     model = models.UserSubscription
@@ -347,8 +356,9 @@ class SubscriptionCreateView(
     success_url = reverse_lazy('dfs_subscription_list')
     template_name = 'subscriptions/subscription_create.html'
 
+
 class SubscriptionUpdateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
 ):
     """View to update the details of a user subscription."""
     model = models.UserSubscription
@@ -363,6 +373,7 @@ class SubscriptionUpdateView(
     success_message = 'User subscription successfully updated'
     success_url = reverse_lazy('dfs_subscription_list')
     template_name = 'subscriptions/subscription_update.html'
+
 
 class SubscriptionDeleteView(PermissionRequiredMixin, abstract.DeleteView):
     """View to delete a user subscription.
@@ -401,6 +412,7 @@ class TransactionListView(PermissionRequiredMixin, abstract.ListView):
     paginate_by = 50
     template_name = 'subscriptions/transaction_list.html'
 
+
 class TransactionDetailView(PermissionRequiredMixin, abstract.DetailView):
     """Shows details of a specific subscription payment transaction."""
     model = models.SubscriptionTransaction
@@ -421,8 +433,9 @@ class PlanListListView(PermissionRequiredMixin, abstract.ListView):
     context_object_name = 'plan_lists'
     template_name = 'subscriptions/plan_list_list.html'
 
+
 class PlanListCreateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
 ):
     """View to create a new plan list."""
     model = models.PlanList
@@ -434,8 +447,9 @@ class PlanListCreateView(
     success_url = reverse_lazy('dfs_plan_list_list')
     template_name = 'subscriptions/plan_list_create.html'
 
+
 class PlanListUpdateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
 ):
     """View to update the details of a plan list."""
     model = models.PlanList
@@ -447,6 +461,7 @@ class PlanListUpdateView(
     success_url = reverse_lazy('dfs_plan_list_list')
     pk_url_kwarg = 'plan_list_id'
     template_name = 'subscriptions/plan_list_update.html'
+
 
 class PlanListDeleteView(PermissionRequiredMixin, abstract.DeleteView):
     """View to delete a plan list.
@@ -483,8 +498,9 @@ class PlanListDetailListView(PermissionRequiredMixin, abstract.DetailView):
     context_object_name = 'plan_list'
     template_name = 'subscriptions/plan_list_detail_list.html'
 
+
 class PlanListDetailCreateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.CreateView
 ):
     """View to create a new plan list."""
     model = models.PlanListDetail
@@ -512,8 +528,9 @@ class PlanListDetailCreateView(
             kwargs={'plan_list_id': self.kwargs['plan_list_id']},
         )
 
+
 class PlanListDetailUpdateView(
-        PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
+    PermissionRequiredMixin, SuccessMessageMixin, abstract.UpdateView
 ):
     """View to update the details of a plan list detail."""
     model = models.PlanListDetail
@@ -541,6 +558,7 @@ class PlanListDetailUpdateView(
             'dfs_plan_list_detail_list',
             kwargs={'plan_list_id': self.kwargs['plan_list_id']},
         )
+
 
 class PlanListDetailDeleteView(PermissionRequiredMixin, abstract.DeleteView):
     """View to delete a plan list detail.
@@ -623,6 +641,7 @@ class SubscribeList(abstract.TemplateView):
         context['details'] = kwargs['details']
 
         return context
+
 
 class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
     """View to handle all aspects of the subscribing process.
@@ -791,12 +810,11 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
 
             if payment_transaction:
                 # Payment successful - can handle subscription processing
-                subscription = self.setup_subscription(
-                    request.user, plan_cost_form.cleaned_data['plan_cost']
+                subscription = UserSubscription.setup_subscription(
+                    request.user, plan_cost_form.cleaned_data['plan_cost'], self.subscription_plan.group
                 )
 
                 # Record the transaction details
-                print('asdasdads')
                 transaction = self.record_transaction(
                     subscription,
                     # self.retrieve_transaction_date(payment_transaction)
@@ -828,7 +846,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
 
         return form
 
-    def process_payment(self, *args, **kwargs): # pylint: disable=unused-argument
+    def process_payment(self, *args, **kwargs):  # pylint: disable=unused-argument
         """Processes payment and confirms if payment is accepted.
 
             This method needs to be overriden in a project to handle
@@ -840,42 +858,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
         """
         return True
 
-    def setup_subscription(self, request_user, plan_cost, active=False):
-        """Adds subscription to user and adds them to required group.
-
-            Parameters:
-                request_user (obj): A Django user instance.
-                plan_cost (obj): A PlanCost instance.
-
-            Returns:
-                obj: The newly created UserSubscription instance.
-                boolean: is active or will active later(eg: after transaction).
-        """
-        current_date = timezone.now()
-
-        # Add subscription plan to user
-        subscription = models.UserSubscription.objects.create(
-            user=request_user,
-            subscription=plan_cost,
-            date_billing_start=current_date,
-            date_billing_end=None,
-            date_billing_last=current_date,
-            date_billing_next=plan_cost.next_billing_datetime(current_date),
-            active=active,
-            cancelled=False,
-        )
-
-        # Add user to the proper group
-        try:
-            group = self.subscription_plan.group
-            group.user_set.add(request_user)
-        except AttributeError:
-            # No group available to add user to
-            pass
-
-        return subscription
-
-    def retrieve_transaction_date(self, payment): # pylint: disable=unused-argument
+    def retrieve_transaction_date(self, payment):  # pylint: disable=unused-argument
         """Returns the transaction date from provided payment details.
 
             Method should be overriden to accomodate the implemented
@@ -910,6 +893,7 @@ class SubscribeView(LoginRequiredMixin, abstract.TemplateView):
         #     amount=subscription.subscription.cost,
         # )
 
+
 class SubscribeUserList(LoginRequiredMixin, abstract.ListView):
     """List of all a user's subscriptions."""
     model = models.UserSubscription
@@ -919,6 +903,7 @@ class SubscribeUserList(LoginRequiredMixin, abstract.ListView):
     def get_queryset(self):
         """Overrides get_queryset to restrict list to logged in user."""
         return self.model.objects.filter(user=self.request.user, active=True)
+
 
 class SubscribeThankYouView(LoginRequiredMixin, abstract.TemplateView):
     """A thank you page and summary for a new subscription."""
@@ -943,6 +928,7 @@ class SubscribeThankYouView(LoginRequiredMixin, abstract.TemplateView):
         context[self.context_object_name] = self.get_object()
 
         return context
+
 
 class SubscribeCancelView(LoginRequiredMixin, abstract.DetailView):
     """View to handle cancelling of subscription.
@@ -983,3 +969,69 @@ class SubscribeCancelView(LoginRequiredMixin, abstract.DetailView):
         messages.success(self.request, self.success_message)
 
         return HttpResponseRedirect(self.get_success_url())
+
+
+class SubscribeRenewView(LoginRequiredMixin, abstract.DetailView):
+    """View to handle renewing and extending of subscription.
+
+        View is extended to handle additional attributes noted below.
+
+        Attributes:
+            success_message (str): Message to display on successful creation.
+            success_url (str): URL to redirect to on successful creation.
+    """
+    model = models.UserSubscription
+    context_object_name = 'subscription'
+    pk_url_kwarg = 'subscription_id'
+    success_message = 'Subscription successfully renewed'
+    success_url = 'dfs_subscribe_user_list'
+    template_name = 'subscriptions/subscribe_renew.html'
+
+    def get_object(self, queryset=None):
+        """Overrides get_object to restrict to logged in user."""
+        return get_object_or_404(
+            self.model,
+            user=self.request.user,
+            id=self.kwargs['subscription_id'],
+        )
+
+    def get_success_url(self):
+        """Returns the success URL."""
+        return reverse_lazy(self.success_url)
+
+    def post(self, request, *args, **kwargs):
+        """Updates a subscription's details to cancel it."""
+        subscription = self.get_object()
+        self.process_renew(subscription)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def process_renew(self, subscription):
+        """Moves forward with payment & subscription processing.
+
+            If forms are invalid will move back to confirmation page
+            for user to correct errors.
+        """
+
+        # Record the transaction details
+        transaction = self.record_transaction(
+            subscription,
+        )
+        print(transaction)
+        if transaction:
+            return redirect('https://www.zarinpalcom/pg/StartPay./' + str(transaction.reference))
+
+        messages.error(self.request, 'Error processing payment')
+
+    def record_transaction(self, subscription, transaction_date=None):
+        """Records transaction details in SubscriptionTransaction.
+
+            Parameters:
+                subscription (obj): A UserSubscription object.
+                transaction_date (obj): A DateTime object of when
+                    payment occurred (defaults to current datetime if
+                    none provided).
+
+            Returns:
+                obj: The created SubscriptionTransaction instance.
+        """
+        return models.SubscriptionTransaction.new_transaction(subscription)

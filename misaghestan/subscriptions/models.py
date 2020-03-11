@@ -3,6 +3,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -245,6 +246,23 @@ class PlanCost(models.Model):
         return None
 
 
+class ActiveUSManager(models.Manager):
+    """Custom Manager for UserSubscription that returns only live US objects."""
+
+    def get_query_set(self):
+        return super(ActiveUSManager, self).get_query_set().filter(active=True)
+
+
+class UserSubscriptionQuerySet(models.QuerySet):
+
+    def get_latest_reserved_sub(self, user):
+        return self.filter(user=user, transactions__paid=True).order_by(
+            '-date_billing_start').first()
+
+    def get_active_sub(self, user):
+        return self.filter(user=user, active=True).first()
+
+
 class UserSubscription(models.Model):
     """Details of a user's specific subscription."""
     id = models.UUIDField(
@@ -300,6 +318,9 @@ class UserSubscription(models.Model):
         help_text=_('whether this subscription is cancelled or not'),
     )
 
+    objects = UserSubscriptionQuerySet().as_manager()
+    active_objects = ActiveUSManager()
+
     class Meta:
         ordering = ('user', 'date_billing_start',)
 
@@ -308,6 +329,70 @@ class UserSubscription(models.Model):
         return self.subscription.plan.group in self.user.groups.all()
 
     user_is_group_member.boolean = True
+
+    def unsubscribe(self):
+        """Unsubscribe user."""
+        self.user.groups.remove(self.subscription.plan.group)
+        self.user.save()
+
+    def subscribe(self):
+        """Subscribe user."""
+        self.user.groups.add(self.subscription.plan.group)
+        self.user.save()
+
+    def renew(self):  # Update subscription details
+        current = timezone.now()
+        self.date_billing_start = self.date_billing_next
+        self.date_billing_next = self.subscription.next_billing_datetime(
+            self.date_billing_next)
+        self.date_billing_last = current
+        self.save()
+
+    def extend(self, timedelta=None):
+        """Extend subscription by `timedelta' or by subscription's
+        recurrence period."""
+        if timedelta is not None:
+            self.date_billing_next += timedelta
+        else:
+            if self.subscription.recurrence_unit:
+                self.subscription.next_billing_datetime(timezone.now())
+            else:
+                self.date_billing_next = None
+
+    @classmethod
+    def setup_subscription(cls, request_user, plan_cost, group, active=False):
+        """Adds subscription to user and adds them to required group.
+
+            Parameters:
+                request_user (obj): A Django user instance.
+                plan_cost (obj): A PlanCost instance.
+
+            Returns:
+                obj: The newly created UserSubscription instance.
+                boolean: is active or will active later(eg: after transaction).
+        """
+        current_date = timezone.now()
+
+        # Add subscription plan to user
+        subscription = cls.objects.create(
+            user=request_user,
+            subscription=plan_cost,
+            date_billing_start=None,
+            date_billing_end=None,
+            date_billing_last=None,
+            date_billing_next=None,
+            active=active,
+            cancelled=False,
+        )
+
+        # Add user to the proper group
+        # try:
+        #     group.user_set.add(request_user)
+        # except AttributeError:
+        # No group available to add user to
+        # pass
+
+        return subscription
 
 
 class SubscriptionTransaction(models.Model):
@@ -328,6 +413,13 @@ class SubscriptionTransaction(models.Model):
     subscription = models.ForeignKey(
         PlanCost,
         help_text=_('the plan costs that were billed'),
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='transactions'
+    )
+    user_subscription = models.ForeignKey(
+        UserSubscription,
+        help_text=_('user subscription'),
         null=True,
         on_delete=models.SET_NULL,
         related_name='transactions'
@@ -373,6 +465,7 @@ class SubscriptionTransaction(models.Model):
             return cls.objects.create(
                 user=subscription.user,
                 subscription=subscription.subscription,
+                user_subscription=subscription,
                 date_transaction=transaction_date,
                 amount=subscription.subscription.cost,
                 reservation=authority,
@@ -382,6 +475,38 @@ class SubscriptionTransaction(models.Model):
             return False
             # messages.add_message(request, messages.WARNING, str(e))
             # return redirect('core:show_checkout_index', order_id=order.id)
+
+    def handle_successful_transaction(self, reference):
+        active_us: UserSubscription = UserSubscription.objects.get_active_sub(user=self.user)
+        current_date = timezone.now()
+
+        # if there is current active subscription, reserve it after last reserved one
+        if active_us is not None:
+
+            # if paid one is the current active one, extend and renew it.
+            if self.subscription.plan == active_us.subscription and self.user_subscription.date_billing_next:
+                active_us.renew()
+            else:
+                latest_reserved_sub: UserSubscription = UserSubscription.objects.get_latest_reserved_sub(self.user)
+                self.user_subscription.date_billing_last = current_date
+                self.user_subscription.date_billing_start = latest_reserved_sub.date_billing_next
+                self.user_subscription.date_billing_next = self.subscription.next_billing_datetime(
+                    latest_reserved_sub.date_billing_next)
+                self.user_subscription.save()
+
+        else:
+            # if there is no active subscription, start it from now
+            self.user_subscription.date_billing_last = current_date
+            self.user_subscription.date_billing_start = current_date
+            self.user_subscription.date_billing_next = self.subscription.next_billing_datetime(current_date)
+            self.user_subscription.active = True
+            self.user_subscription.save()
+
+        # save transaction
+        self.reference = reference
+        self.paid = True
+        self.date_transaction = timezone.now()
+        self.save()
 
 
 class PlanList(models.Model):
@@ -454,3 +579,18 @@ class PlanListDetail(models.Model):
         return 'Plan List {} - {}'.format(
             self.plan_list, self.plan.plan_name
         )
+
+
+# add User.get_usersubscription() method
+def __user_get_usersubscription(user):
+    if not hasattr(user, '_usersubscription_cache'):
+        user._usersubscription_cache = None
+        for us in UserSubscription.active_objects.filter(user=user):
+            # if us.valid():
+            user._usersubscription_cache = us
+            break
+
+    return user._usersubscription_cache
+
+
+get_user_model().add_to_class('get_usersubscription', __user_get_usersubscription)
